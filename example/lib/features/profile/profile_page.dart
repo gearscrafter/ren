@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -9,18 +8,12 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  late final StreamController<String> _controller;
-  late final StreamSubscription<String> _subscription;
 
   @override
   void initState() {
     super.initState();
 
-    _controller = StreamController<String>();
 
-    _subscription = _controller.stream.listen((event) {
-      print(event);
-    });
 
     setState(() {});
   }
