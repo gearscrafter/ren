@@ -1,0 +1,11 @@
+name: ren_example
+description: Example Flutter app demonstrating all patterns detected by ren.
+version: 1.0.0
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+  flutter: ">=3.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter

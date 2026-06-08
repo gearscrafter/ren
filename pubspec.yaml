@@ -1,0 +1,22 @@
+name: ren
+description: >
+  A static analysis tool that measures the performance weight of each feature
+  in your Flutter app — detecting costly AST patterns and reporting a gravity
+  score per feature.
+version: 0.0.1
+repository: https://github.com/gearscrafter/ren
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+
+dependencies:
+  analyzer: '>=7.1.0 <14.0.0'
+  args: ^2.5.0
+  path: ^1.9.0
+
+dev_dependencies:
+  lints: ^6.1.0
+  test: ^1.26.0
+
+executables:
+  ren: ren
