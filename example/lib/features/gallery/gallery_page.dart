@@ -22,11 +22,10 @@ class GalleryPage extends StatelessWidget {
             ),
             children: _images
                 .map((url) => Image(
-                      image: NetworkImage(url), 
+                      image: NetworkImage(url),
                     ))
                 .toList(),
           ),
-
           ImageFiltered(
             imageFilter: const ColorFilter.mode(
               Colors.blue,
@@ -34,11 +33,9 @@ class GalleryPage extends StatelessWidget {
             ),
             child: const FlutterLogo(size: 100),
           ),
-
           ClipPath(
             child: Container(color: Colors.red, height: 100),
           ),
-
           CustomPaint(
             painter: _HeavyPainter(),
             child: const SizedBox(height: 100),
@@ -52,7 +49,7 @@ class GalleryPage extends StatelessWidget {
 class _HeavyPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    canvas.saveLayer(Offset.zero & size, Paint()); 
+    canvas.saveLayer(Offset.zero & size, Paint());
     canvas.restore();
   }
 

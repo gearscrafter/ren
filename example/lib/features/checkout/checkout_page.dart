@@ -16,19 +16,16 @@ class CheckoutPage extends StatelessWidget {
             ),
             child: Container(color: Colors.white10),
           ),
-
           ShaderMask(
             shaderCallback: (bounds) => const LinearGradient(
               colors: [Colors.blue, Colors.purple],
             ).createShader(bounds),
             child: const Text('Checkout', style: TextStyle(fontSize: 32)),
           ),
-
           Opacity(
             opacity: 0.5,
             child: Container(color: Colors.red),
           ),
-
           ListView(
             children: List.generate(
               100,
