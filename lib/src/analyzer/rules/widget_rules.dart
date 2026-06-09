@@ -20,7 +20,7 @@ List<WidgetRule> effectiveRules(RenConfig config) {
 }
 
 /// Weight table for costly widget patterns.
-const builtInRules  = [
+const builtInRules = [
   WidgetRule(
     name: 'BackdropFilter',
     reason:
@@ -140,12 +140,14 @@ const builtInRules  = [
   ),
   WidgetRule(
     name: 'ClipRRect',
-    reason: 'Cheaper than ClipPath but still triggers rasterization — avoid in animations.',
+    reason:
+        'Cheaper than ClipPath but still triggers rasterization — avoid in animations.',
     weight: 15,
   ),
   WidgetRule(
     name: 'Hero',
-    reason: 'Expensive during transitions — avoid with large images or inside lists.',
+    reason:
+        'Expensive during transitions — avoid with large images or inside lists.',
     weight: 20,
   ),
 ];
@@ -160,4 +162,3 @@ class WidgetRule {
     required this.weight,
   });
 }
-

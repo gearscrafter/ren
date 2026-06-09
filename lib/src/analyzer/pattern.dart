@@ -41,7 +41,6 @@ class RenPattern {
   });
 }
 
-
 enum PatternLevel {
   presence,
   context,

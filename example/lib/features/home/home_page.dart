@@ -19,7 +19,6 @@ class _HomePageState extends State<HomePage>
       vsync: this,
       duration: const Duration(seconds: 2),
     )..repeat();
-
   }
 
   @override
@@ -34,7 +33,6 @@ class _HomePageState extends State<HomePage>
         child: Column(
           children: [
             Text('Size: ${size.width} x ${size.height}'),
-
             AnimatedBuilder(
               animation: _controller,
               builder: (context, child) {
@@ -44,7 +42,6 @@ class _HomePageState extends State<HomePage>
                 );
               },
             ),
-
             AnimatedBuilder(
               animation: _controller,
               builder: (context, child) {
@@ -56,7 +53,6 @@ class _HomePageState extends State<HomePage>
                 );
               },
             ),
-
             AnimatedBuilder(
               animation: _controller,
               builder: (context, child) {
@@ -66,7 +62,6 @@ class _HomePageState extends State<HomePage>
                 );
               },
             ),
-
             SizedBox(
               height: 200,
               child: PageView(
@@ -82,7 +77,6 @@ class _HomePageState extends State<HomePage>
                 ),
               ),
             ),
-
             SizedBox(
               height: 200,
               child: Stack(

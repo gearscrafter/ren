@@ -18,7 +18,6 @@ class GravityVisitor extends RecursiveAstVisitor<void> {
 
   List<RenPattern> get patterns => List.unmodifiable(_patterns);
 
-
   @override
   void visitMethodDeclaration(MethodDeclaration node) {
     final previousMethod = _currentMethod;
@@ -30,14 +29,12 @@ class GravityVisitor extends RecursiveAstVisitor<void> {
     _lambdaDepth = previousLambdaDepth;
   }
 
-
   @override
   void visitFunctionExpression(FunctionExpression node) {
     _lambdaDepth++;
     super.visitFunctionExpression(node);
     _lambdaDepth--;
   }
-
 
   @override
   void visitInstanceCreationExpression(InstanceCreationExpression node) {
@@ -74,8 +71,8 @@ class GravityVisitor extends RecursiveAstVisitor<void> {
     }
 
     final widgetName = target != null
-      ? (_hasRule('$target.$methodName') ? '$target.$methodName' : target)
-      : methodName;
+        ? (_hasRule('$target.$methodName') ? '$target.$methodName' : target)
+        : methodName;
 
     if (target != null) {
       final fullName = '$target.$methodName';
@@ -95,7 +92,6 @@ class GravityVisitor extends RecursiveAstVisitor<void> {
     _widgetStack.removeLast();
   }
 
-  
   void _evaluateWithContext(String widgetName, int offset) {
     final compound = compoundRules.firstWhere(
       (r) => r.widget == widgetName && _widgetStack.contains(r.parent),
@@ -139,7 +135,6 @@ class GravityVisitor extends RecursiveAstVisitor<void> {
     return (customBaseWeight * multiplier).round();
   }
 
-  
   void _checkSetStateContext(MethodInvocation node) {
     const dangerousMethods = {'build', 'initState', 'dispose'};
 
@@ -161,17 +156,20 @@ class GravityVisitor extends RecursiveAstVisitor<void> {
     return switch (method) {
       'build' => const _SetStateRule(
           name: 'setState in build',
-          reason: 'Calling setState inside build triggers infinite rebuild loop.',
+          reason:
+              'Calling setState inside build triggers infinite rebuild loop.',
           weight: 50,
         ),
       'initState' => const _SetStateRule(
           name: 'setState in initState',
-          reason: 'setState in initState is redundant — widget has not mounted yet, use direct assignment instead.',
+          reason:
+              'setState in initState is redundant — widget has not mounted yet, use direct assignment instead.',
           weight: 35,
         ),
       'dispose' => const _SetStateRule(
           name: 'setState in dispose',
-          reason: 'Calling setState after dispose causes a crash — the widget is no longer mounted.',
+          reason:
+              'Calling setState after dispose causes a crash — the widget is no longer mounted.',
           weight: 60,
         ),
       _ => const _SetStateRule(

@@ -21,11 +21,9 @@ class GalleryPage extends StatelessWidget {
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
             ),
-            children: _images
-                .map((url) => Image(image: NetworkImage(url)))
-                .toList(),
+            children:
+                _images.map((url) => Image(image: NetworkImage(url))).toList(),
           ),
-
           SizedBox(
             height: 200,
             child: ListView(
@@ -40,7 +38,6 @@ class GalleryPage extends StatelessWidget {
               ),
             ),
           ),
-
           SizedBox(
             height: 200,
             child: ListView(
@@ -56,7 +53,6 @@ class GalleryPage extends StatelessWidget {
               ),
             ),
           ),
-
           SizedBox(
             height: 200,
             child: ListView(
@@ -72,7 +68,6 @@ class GalleryPage extends StatelessWidget {
               ),
             ),
           ),
-
           GridView(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
@@ -87,7 +82,6 @@ class GalleryPage extends StatelessWidget {
               ),
             ),
           ),
-
           SizedBox(
             height: 200,
             child: ListView(

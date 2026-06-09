@@ -76,16 +76,16 @@ class ConsolerReporter {
     final level = result.level;
 
     final levelColor = switch (level) {
-      GravityLevel.low      => _green,
-      GravityLevel.medium   => _yellow,
-      GravityLevel.high     => '\x1B[38;5;208m',
+      GravityLevel.low => _green,
+      GravityLevel.medium => _yellow,
+      GravityLevel.high => '\x1B[38;5;208m',
       GravityLevel.critical => _red,
     };
 
     final levelLabel = switch (level) {
-      GravityLevel.low      => 'LOW     ',
-      GravityLevel.medium   => 'MEDIUM  ',
-      GravityLevel.high     => 'HIGH    ',
+      GravityLevel.low => 'LOW     ',
+      GravityLevel.medium => 'MEDIUM  ',
+      GravityLevel.high => 'HIGH    ',
       GravityLevel.critical => 'CRITICAL',
     };
 
@@ -104,8 +104,8 @@ class ConsolerReporter {
     for (final pattern in result.patterns) {
       final levelIcon = switch (pattern.level) {
         PatternLevel.presence => _c(_gray, '↳'),
-        PatternLevel.context  => _c(_yellow, '↳'),
-        PatternLevel.risk     => _c(_red, '↳'),
+        PatternLevel.context => _c(_yellow, '↳'),
+        PatternLevel.risk => _c(_red, '↳'),
       };
 
       final contextTag = pattern.context != null

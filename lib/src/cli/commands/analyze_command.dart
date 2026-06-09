@@ -177,8 +177,7 @@ class AnalyzeCommand {
         buffer.writeln('          "name": "${pp.name}",');
         buffer.writeln('          "weight": ${pp.weight},');
         buffer.writeln('          "line": ${pp.line},');
-        buffer.writeln(
-            '          "file": "${pp.file.replaceAll('\\', '/')}"');
+        buffer.writeln('          "file": "${pp.file.replaceAll('\\', '/')}"');
         buffer.writeln('        }$patternComma');
       }
 

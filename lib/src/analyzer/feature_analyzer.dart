@@ -56,7 +56,10 @@ class FeatureAnalyzer {
     );
   }
 
-  Future<List<RenPattern>> _analyzeFile(String filePath, List<WidgetRule> rules,) async {
+  Future<List<RenPattern>> _analyzeFile(
+    String filePath,
+    List<WidgetRule> rules,
+  ) async {
     try {
       final content = File(filePath).readAsStringSync();
       final result = parseString(content: content, throwIfDiagnostics: false);
@@ -85,23 +88,24 @@ class FeatureAnalyzer {
   int _calculateScore(List<RenPattern> patterns, int fileCount) {
     if (patterns.isEmpty) return 0;
 
-    final presencePatterns = patterns.where((p) => p.level == PatternLevel.presence);
-    final contextPatterns  = patterns.where((p) => p.level == PatternLevel.context);
-    final riskPatterns     = patterns.where((p) => p.level == PatternLevel.risk);
+    final presencePatterns =
+        patterns.where((p) => p.level == PatternLevel.presence);
+    final contextPatterns =
+        patterns.where((p) => p.level == PatternLevel.context);
+    final riskPatterns = patterns.where((p) => p.level == PatternLevel.risk);
 
     const maxPresencePerFile = 80;
-    const maxContextPerFile  = 120;
-    const maxRiskPerFile     = 200;
+    const maxContextPerFile = 120;
+    const maxRiskPerFile = 200;
 
     final presenceWeight = presencePatterns.fold(0, (s, p) => s + p.weight);
-    final contextWeight  = contextPatterns.fold(0, (s, p) => s + p.weight);
-    final riskWeight     = riskPatterns.fold(0, (s, p) => s + p.weight);
+    final contextWeight = contextPatterns.fold(0, (s, p) => s + p.weight);
+    final riskWeight = riskPatterns.fold(0, (s, p) => s + p.weight);
 
-    final maxPossible = (
-      (maxPresencePerFile * fileCount) +
-      (maxContextPerFile  * fileCount) +
-      (maxRiskPerFile     * fileCount)
-    ).clamp(1, 999999);
+    final maxPossible = ((maxPresencePerFile * fileCount) +
+            (maxContextPerFile * fileCount) +
+            (maxRiskPerFile * fileCount))
+        .clamp(1, 999999);
 
     final totalWeight = presenceWeight + contextWeight + riskWeight;
     final score = ((totalWeight / maxPossible) * 100).round();
