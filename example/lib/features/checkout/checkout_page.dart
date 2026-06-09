@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 
 class CheckoutPage extends StatelessWidget {
@@ -9,12 +11,14 @@ class CheckoutPage extends StatelessWidget {
       appBar: AppBar(title: const Text('Checkout')),
       body: Stack(
         children: [
-          BackdropFilter(
-            filter: const ColorFilter.mode(
-              Colors.black26,
-              BlendMode.darken,
+          ListView(
+            children: List.generate(
+              100,
+              (i) => BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+                child: ListTile(title: Text('Item $i')),
+              ),
             ),
-            child: Container(color: Colors.white10),
           ),
           ShaderMask(
             shaderCallback: (bounds) => const LinearGradient(
@@ -29,7 +33,10 @@ class CheckoutPage extends StatelessWidget {
           ListView(
             children: List.generate(
               100,
-              (i) => ListTile(title: Text('Item $i')),
+              (i) => Opacity(
+                opacity: 0.8,
+                child: ListTile(title: Text('Opacity Item $i')),
+              ),
             ),
           ),
         ],

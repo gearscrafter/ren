@@ -1,0 +1,22 @@
+features: lib/features
+
+fail_on: high
+
+ignore:
+  - lib/generated
+  - lib/l10n
+  - lib/_tools
+
+weights:
+  Opacity: 10
+  ListView: 0
+  RepaintBoundary: 0
+  MediaQuery.of: 10
+
+custom_rules:
+  - name: MyHeavyWidget
+    reason: Internal widget known to cause jank in production.
+    weight: 45
+  - name: LegacyScrollView
+    reason: Legacy component — migrate to ListView.builder.
+    weight: 30

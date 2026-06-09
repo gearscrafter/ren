@@ -1,5 +1,7 @@
 import 'dart:io';
 import 'package:analyzer/dart/analysis/utilities.dart';
+import 'package:ren/src/analyzer/rules/widget_rules.dart';
+import 'package:ren/src/config/ren_config.dart';
 import '../scanner/feature.dart';
 import '../analyzer/ast_visitor.dart';
 import '../analyzer/pattern.dart';
@@ -33,11 +35,15 @@ enum GravityLevel { low, medium, high, critical }
 /// Analyzes one [RenFeature] and returns a [FeatureResult] with patterns
 /// and a gravity score.
 class FeatureAnalyzer {
+  final RenConfig config;
+
+  FeatureAnalyzer({this.config = RenConfig.empty});
   Future<FeatureResult> analyze(RenFeature feature) async {
+    final rules = effectiveRules(config);
     final allPatterns = <RenPattern>[];
 
     for (final filePath in feature.files) {
-      final patterns = await _analyzeFile(filePath);
+      final patterns = await _analyzeFile(filePath, rules);
       allPatterns.addAll(patterns);
     }
 
@@ -50,11 +56,11 @@ class FeatureAnalyzer {
     );
   }
 
-  Future<List<RenPattern>> _analyzeFile(String filePath) async {
+  Future<List<RenPattern>> _analyzeFile(String filePath, List<WidgetRule> rules,) async {
     try {
       final content = File(filePath).readAsStringSync();
       final result = parseString(content: content, throwIfDiagnostics: false);
-      final visitor = GravityVisitor(filePath: filePath);
+      final visitor = GravityVisitor(filePath: filePath, rules: rules);
       result.unit.visitChildren(visitor);
 
       return visitor.patterns.map((p) {
@@ -66,6 +72,8 @@ class FeatureAnalyzer {
           weight: p.weight,
           file: p.file,
           line: location.lineNumber,
+          level: p.level,
+          context: p.context,
         );
       }).toList();
     } catch (_) {
@@ -77,8 +85,25 @@ class FeatureAnalyzer {
   int _calculateScore(List<RenPattern> patterns, int fileCount) {
     if (patterns.isEmpty) return 0;
 
-    final totalWeight = patterns.fold(0, (sum, p) => sum + p.weight);
-    final maxPossible = (_maxWeightPerFile * fileCount).clamp(1, 999999);
+    final presencePatterns = patterns.where((p) => p.level == PatternLevel.presence);
+    final contextPatterns  = patterns.where((p) => p.level == PatternLevel.context);
+    final riskPatterns     = patterns.where((p) => p.level == PatternLevel.risk);
+
+    const maxPresencePerFile = 80;
+    const maxContextPerFile  = 120;
+    const maxRiskPerFile     = 200;
+
+    final presenceWeight = presencePatterns.fold(0, (s, p) => s + p.weight);
+    final contextWeight  = contextPatterns.fold(0, (s, p) => s + p.weight);
+    final riskWeight     = riskPatterns.fold(0, (s, p) => s + p.weight);
+
+    final maxPossible = (
+      (maxPresencePerFile * fileCount) +
+      (maxContextPerFile  * fileCount) +
+      (maxRiskPerFile     * fileCount)
+    ).clamp(1, 999999);
+
+    final totalWeight = presenceWeight + contextWeight + riskWeight;
     final score = ((totalWeight / maxPossible) * 100).round();
 
     return score.clamp(0, 100);

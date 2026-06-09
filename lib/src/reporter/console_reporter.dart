@@ -1,4 +1,5 @@
 import 'package:ren/src/analyzer/feature_analyzer.dart';
+import 'package:ren/src/analyzer/pattern.dart';
 
 /// Centralizes all terminal output for Ren.
 class ConsolerReporter {
@@ -75,16 +76,16 @@ class ConsolerReporter {
     final level = result.level;
 
     final levelColor = switch (level) {
-      GravityLevel.low => _green,
-      GravityLevel.medium => _yellow,
-      GravityLevel.high => '\x1B[38;5;208m',
+      GravityLevel.low      => _green,
+      GravityLevel.medium   => _yellow,
+      GravityLevel.high     => '\x1B[38;5;208m',
       GravityLevel.critical => _red,
     };
 
     final levelLabel = switch (level) {
-      GravityLevel.low => 'LOW     ',
-      GravityLevel.medium => 'MEDIUM  ',
-      GravityLevel.high => 'HIGH    ',
+      GravityLevel.low      => 'LOW     ',
+      GravityLevel.medium   => 'MEDIUM  ',
+      GravityLevel.high     => 'HIGH    ',
       GravityLevel.critical => 'CRITICAL',
     };
 
@@ -99,12 +100,47 @@ class ConsolerReporter {
       '${_c(_bold, score)}',
     );
 
+    if (result.patterns.isEmpty) return;
     for (final pattern in result.patterns) {
+      final levelIcon = switch (pattern.level) {
+        PatternLevel.presence => _c(_gray, '↳'),
+        PatternLevel.context  => _c(_yellow, '↳'),
+        PatternLevel.risk     => _c(_red, '↳'),
+      };
+
+      final contextTag = pattern.context != null
+          ? _c(_dim, ' [inside ${pattern.context}]')
+          : '';
+
       print(
-        '    ${_c(_gray, '↳')} ${_c(_dim, pattern.name.padRight(18))} '
+        '    $levelIcon ${_c(_dim, pattern.name.padRight(22))}'
+        '$contextTag '
         '${_c(_gray, pattern.reason)}',
       );
     }
+
+    print('');
+    print('    ${_c(_dim, 'Top contributors:')}');
+
+    final contributions = <String, int>{};
+    for (final pattern in result.patterns) {
+      contributions[pattern.name] =
+          (contributions[pattern.name] ?? 0) + pattern.weight;
+    }
+
+    final sorted = contributions.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+
+    for (final entry in sorted.take(5)) {
+      final dots = '·' * (30 - entry.key.length).clamp(1, 30);
+      print(
+        '    ${_c(_dim, entry.key)} '
+        '${_c(_gray, dots)} '
+        '${_c(levelColor, '+${entry.value}')}',
+      );
+    }
+
+    print('');
   }
 
   static String _gravityBar(int score) {

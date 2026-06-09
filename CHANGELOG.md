@@ -1,3 +1,21 @@
+## 0.1.0
+
+### Added
+- Compound rule detection — 20+ widget combinations with elevated weights:
+  - Level 3 (critical × 2.5) — `BackdropFilter`/`ShaderMask`/`ImageFiltered`/`ColorFiltered` inside `ListView`/`GridView`, `Opacity`/`ClipPath`/`ClipRRect` inside `AnimatedBuilder`, `Opacity` inside `ListView`/`GridView`.
+  - Level 2 (high × 1.5) — `BackdropFilter` inside `Stack`/`PageView`, `NetworkImage` inside `ListView`/`GridView`, `CustomPaint`/`ClipPath` inside `AnimatedBuilder`/`ListView`/`GridView`, `Hero` inside `ListView`/`GridView`, `ShaderMask` inside `AnimatedBuilder`.
+- Top contributors breakdown per feature — shows which patterns contribute most to the gravity score.
+- `[inside ParentWidget]` context tag on compound patterns.
+- `renw` executable — fallback for Windows PowerShell where `ren` conflicts with `Rename-Item`.
+- New patterns — `ClipRRect`, `Hero`.
+- `lambda-depth` tracking to avoid false positives on `setState` inside callbacks.
+
+### Fixed
+- `setState` false positives on callbacks with target (e.g. `state.setState`, `logic.setState`).
+- `GridView.count` and other non-lazy named constructors now correctly flagged.
+- `Image.network` detection via full name matching in `visitMethodInvocation`.
+
+
 ## 0.0.1
 
 - Feature detection by folder convention (`lib/features/`, `lib/modules/`).

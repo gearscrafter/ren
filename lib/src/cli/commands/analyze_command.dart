@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:args/args.dart';
 import 'package:path/path.dart' as p;
 import 'package:ren/src/analyzer/feature_analyzer.dart';
+import 'package:ren/src/config/config_loader.dart';
 import 'package:ren/src/reporter/console_reporter.dart';
 import 'package:ren/src/utils/spinner.dart';
 import '../../scanner/feature_scanner.dart';
@@ -17,11 +18,17 @@ class AnalyzeCommand {
     final format = _results['format'] as String;
     final customFeatures = _results['features'] as String?;
     final failOn = _results['fail-on'] as String?;
-    final projectPath = p.absolute(rawPath);
-
     final excludeRaw = _results['exclude'] as String?;
     final excludedPaths =
         excludeRaw?.split(',').map((e) => e.trim()).toList() ?? [];
+    final projectPath = p.absolute(rawPath);
+
+    final config = ConfigLoader(projectPath: projectPath).load();
+
+    final effectiveFeatures = customFeatures ?? config.features;
+    final effectiveFailOn = failOn ?? config.failOn;
+    final effectiveExclude =
+        excludedPaths.isNotEmpty ? excludedPaths : config.ignore;
 
     final isJson = format == 'json';
 
@@ -46,19 +53,19 @@ class AnalyzeCommand {
     if (!isJson) {
       ConsolerReporter.printInfo('Project  : $projectPath');
       ConsolerReporter.printInfo('Format   : $format');
-      if (customFeatures != null) {
-        ConsolerReporter.printInfo('Features : $customFeatures');
+      if (effectiveFeatures != null) {
+        ConsolerReporter.printInfo('Features : $effectiveFeatures');
       }
-      if (excludedPaths.isNotEmpty) {
-        ConsolerReporter.printInfo('Exclude  : ${excludedPaths.join(', ')}');
+      if (effectiveExclude.isNotEmpty) {
+        ConsolerReporter.printInfo('Exclude  : ${effectiveExclude.join(', ')}');
       }
       ConsolerReporter.printDivider();
     }
 
     final scanner = FeatureScanner(
       projectPath: projectPath,
-      customFeaturesPath: customFeatures,
-      excludedPaths: excludedPaths,
+      customFeaturesPath: effectiveFeatures,
+      excludedPaths: effectiveExclude,
     );
     final result = await scanner.scan();
 
@@ -74,7 +81,7 @@ class AnalyzeCommand {
       exit(1);
     }
 
-    final analyzer = FeatureAnalyzer();
+    final analyzer = FeatureAnalyzer(config: config);
     final featureResults = <FeatureResult>[];
     final spinner = Spinner();
 
@@ -93,7 +100,7 @@ class AnalyzeCommand {
       spinner.stop();
     }
 
-    _printResults(featureResults, format, failOn: failOn);
+    _printResults(featureResults, format, failOn: effectiveFailOn);
   }
 
   void _printResults(List<FeatureResult> results, String format,
@@ -164,13 +171,14 @@ class AnalyzeCommand {
       buffer.writeln('      "patterns": [');
 
       for (var j = 0; j < r.patterns.length; j++) {
-        final p = r.patterns[j];
+        final pp = r.patterns[j];
         final patternComma = j < r.patterns.length - 1 ? ',' : '';
         buffer.writeln('        {');
-        buffer.writeln('          "name": "${p.name}",');
-        buffer.writeln('          "weight": ${p.weight},');
-        buffer.writeln('          "line": ${p.line},');
-        buffer.writeln('          "file": "${p.file.replaceAll('\\', '/')}"');
+        buffer.writeln('          "name": "${pp.name}",');
+        buffer.writeln('          "weight": ${pp.weight},');
+        buffer.writeln('          "line": ${pp.line},');
+        buffer.writeln(
+            '          "file": "${pp.file.replaceAll('\\', '/')}"');
         buffer.writeln('        }$patternComma');
       }
 

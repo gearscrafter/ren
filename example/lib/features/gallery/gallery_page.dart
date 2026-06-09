@@ -17,14 +17,91 @@ class GalleryPage extends StatelessWidget {
       body: Column(
         children: [
           GridView(
+            shrinkWrap: true,
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
             ),
             children: _images
-                .map((url) => Image(
-                      image: NetworkImage(url),
-                    ))
+                .map((url) => Image(image: NetworkImage(url)))
                 .toList(),
+          ),
+
+          SizedBox(
+            height: 200,
+            child: ListView(
+              children: List.generate(
+                20,
+                (i) => ShaderMask(
+                  shaderCallback: (bounds) => const LinearGradient(
+                    colors: [Colors.blue, Colors.purple],
+                  ).createShader(bounds),
+                  child: ListTile(title: Text('Shader Item $i')),
+                ),
+              ),
+            ),
+          ),
+
+          SizedBox(
+            height: 200,
+            child: ListView(
+              children: List.generate(
+                20,
+                (i) => ColorFiltered(
+                  colorFilter: const ColorFilter.mode(
+                    Colors.red,
+                    BlendMode.colorBurn,
+                  ),
+                  child: ListTile(title: Text('ColorFilter Item $i')),
+                ),
+              ),
+            ),
+          ),
+
+          SizedBox(
+            height: 200,
+            child: ListView(
+              children: List.generate(
+                20,
+                (i) => ClipPath(
+                  child: Container(
+                    height: 50,
+                    color: Colors.green,
+                    child: Text('Clip Item $i'),
+                  ),
+                ),
+              ),
+            ),
+          ),
+
+          GridView(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+            ),
+            children: List.generate(
+              4,
+              (i) => CustomPaint(
+                painter: _HeavyPainter(),
+                child: const SizedBox(height: 100),
+              ),
+            ),
+          ),
+
+          SizedBox(
+            height: 200,
+            child: ListView(
+              children: List.generate(
+                20,
+                (i) => ImageFiltered(
+                  imageFilter: const ColorFilter.mode(
+                    Colors.blue,
+                    BlendMode.colorBurn,
+                  ),
+                  child: ListTile(title: Text('ImageFilter Item $i')),
+                ),
+              ),
+            ),
           ),
           ImageFiltered(
             imageFilter: const ColorFilter.mode(
