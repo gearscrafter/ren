@@ -6,9 +6,6 @@ import '../scanner/feature.dart';
 import '../analyzer/ast_visitor.dart';
 import '../analyzer/pattern.dart';
 
-/// Maximum possible weight for a single file — used to normalize the score.
-/// Represents a theoretical worst case: all heavy widgets in one file.
-const _maxWeightPerFile = 100;
 
 /// Result of analyzing a single [RenFeature].
 class FeatureResult {
