@@ -22,7 +22,7 @@ class AnalyzeCommand {
     final excludeRaw = _results['exclude'] as String?;
     final excludedPaths =
         excludeRaw?.split(',').map((e) => e.trim()).toList() ?? [];
-    final projectPath = p.absolute(rawPath);
+    final projectPath = p.normalize(p.absolute(rawPath));
 
     final config = ConfigLoader(projectPath: projectPath).load();
 
@@ -82,7 +82,10 @@ class AnalyzeCommand {
       exit(1);
     }
 
-    final analyzer = FeatureAnalyzer(config: config);
+    final analyzer = FeatureAnalyzer(
+      config: config,
+      projectPath: projectPath,
+    );
     final featureResults = <FeatureResult>[];
     final spinner = Spinner();
 

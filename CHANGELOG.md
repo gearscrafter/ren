@@ -1,10 +1,18 @@
+## 0.3.0
+
+### Added
+- `AnalysisContextCollection` support — ren now uses full semantic analysis
+  instead of `parseString`, resolving imports, re-exports, and type aliases
+  correctly. Falls back to `parseString` automatically if the context cannot
+  be built (e.g. `pub get` not run).
+
 ## 0.2.3
 
 ### Fixed
 - Feature scanner now includes `.dart` files at the root of the specified
   feature folder as a named feature — previously only sub-directories were
   scanned, causing files at the root level to be silently skipped.
-  
+
 ## 0.2.2
 
 ### Fixed

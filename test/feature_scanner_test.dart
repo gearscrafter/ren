@@ -167,7 +167,7 @@ void main() {
         files: [],
       );
 
-      final analyzer = FeatureAnalyzer();
+      final analyzer = FeatureAnalyzer(projectPath: tempDir.path);
       final result = await analyzer.analyze(feature);
 
       expect(result.gravityScore, 0);
@@ -191,7 +191,7 @@ class MyWidget extends StatelessWidget {
         files: [file.path],
       );
 
-      final analyzer = FeatureAnalyzer();
+      final analyzer = FeatureAnalyzer(projectPath: tempDir.path);
       final result = await analyzer.analyze(feature);
 
       expect(result.patterns, isNotEmpty);
@@ -214,7 +214,7 @@ class MyWidget extends StatelessWidget {
         files: [file.path],
       );
 
-      final analyzer = FeatureAnalyzer();
+      final analyzer = FeatureAnalyzer(projectPath: tempDir.path);
       final result = await analyzer.analyze(feature);
 
       expect(result.patterns.any((p) => p.name == 'ListView'), isTrue);
@@ -239,14 +239,14 @@ class MyWidget extends StatelessWidget {
         files: [file.path],
       );
 
-      final analyzer = FeatureAnalyzer();
+      final analyzer = FeatureAnalyzer(projectPath: tempDir.path);
       final result = await analyzer.analyze(feature);
 
       expect(result.patterns.any((p) => p.name == 'ListView'), isFalse);
     });
 
     test('score is clamped between 0 and 100', () async {
-      final analyzer = FeatureAnalyzer();
+      final analyzer = FeatureAnalyzer(projectPath: tempDir.path);
 
       final empty = RenFeature(name: 'empty', path: tempDir.path, files: []);
       final emptyResult = await analyzer.analyze(empty);

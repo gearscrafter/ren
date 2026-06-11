@@ -1,17 +1,19 @@
 import 'dart:io';
+import 'package:analyzer/dart/analysis/analysis_context_collection.dart';
+import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/dart/analysis/utilities.dart';
-import 'package:ren/src/analyzer/leak_visitor.dart';
+import 'package:analyzer/file_system/physical_file_system.dart';
 import 'package:ren/src/analyzer/rules/widget_rules.dart';
 import 'package:ren/src/config/ren_config.dart';
 import '../scanner/feature.dart';
 import '../analyzer/ast_visitor.dart';
+import '../analyzer/leak_visitor.dart';
 import '../analyzer/pattern.dart';
 
-/// Result of analyzing a single [RenFeature].
 class FeatureResult {
   final RenFeature feature;
   final List<RenPattern> patterns;
-  final int gravityScore; // 0–100
+  final int gravityScore;
 
   const FeatureResult({
     required this.feature,
@@ -29,43 +31,93 @@ class FeatureResult {
 
 enum GravityLevel { low, medium, high, critical }
 
-/// Analyzes one [RenFeature] and returns a [FeatureResult] with patterns
-/// and a gravity score.
 class FeatureAnalyzer {
   final RenConfig config;
+  final String projectPath;
 
-  FeatureAnalyzer({this.config = RenConfig.empty});
+  FeatureAnalyzer({
+    this.config = RenConfig.empty,
+    required this.projectPath,
+  });
+
+  AnalysisContextCollection? _buildContext() {
+    try {
+      return AnalysisContextCollection(
+        includedPaths: [Directory(projectPath).absolute.path],
+        resourceProvider: PhysicalResourceProvider.INSTANCE,
+      );
+    } catch (_) {
+      return null;
+    }
+  }
+
   Future<FeatureResult> analyze(RenFeature feature) async {
     final rules = effectiveRules(config);
     final allPatterns = <RenPattern>[];
+    final collection = _buildContext();
 
     for (final filePath in feature.files) {
-      final patterns = await _analyzeFile(filePath, rules);
+      final patterns = await _analyzeFile(
+        filePath,
+        rules,
+        collection: collection,
+      );
       allPatterns.addAll(patterns);
     }
 
-    final score = _calculateScore(allPatterns, feature.fileCount);
+    final leakNames = allPatterns
+        .where((p) => p.name.contains(' leak'))
+        .map((p) => p.name.replaceAll(' leak', '').trim())
+        .toSet();
+
+    final deduplicated = allPatterns
+        .where((p) => p.name.contains(' leak') || !leakNames.contains(p.name))
+        .toList();
+
+    final score = _calculateScore(deduplicated, feature.fileCount);
 
     return FeatureResult(
       feature: feature,
-      patterns: allPatterns,
+      patterns: deduplicated,
       gravityScore: score,
     );
   }
 
   Future<List<RenPattern>> _analyzeFile(
     String filePath,
-    List<WidgetRule> rules,
-  ) async {
+    List<WidgetRule> rules, {
+    AnalysisContextCollection? collection,
+  }) async {
     try {
-      final content = File(filePath).readAsStringSync();
-      final result = parseString(content: content, throwIfDiagnostics: false);
+      late final dynamic result;
+      bool resolved = false;
+
+      if (collection != null) {
+        try {
+          final absPath = File(filePath).absolute.path;
+          final context = collection.contextFor(absPath);
+          final resolvedResult =
+              await context.currentSession.getResolvedUnit(absPath);
+
+          if (resolvedResult is ResolvedUnitResult) {
+            result = resolvedResult;
+            resolved = true;
+          }
+        } catch (_) {}
+      }
+
+      if (!resolved) {
+        final content = File(filePath).readAsStringSync();
+        result = parseString(content: content, throwIfDiagnostics: false);
+      }
+
+      final unit = resolved ? (result as ResolvedUnitResult).unit : result.unit;
 
       final gravityVisitor = GravityVisitor(filePath: filePath, rules: rules);
-      result.unit.visitChildren(gravityVisitor);
+      unit.visitChildren(gravityVisitor);
 
       final leakVisitor = LeakVisitor(filePath: filePath);
-      result.unit.visitChildren(leakVisitor);
+      unit.visitChildren(leakVisitor);
 
       final leakResourceNames = leakVisitor.patterns
           .map((p) => p.name.replaceAll(' leak', '').trim())
@@ -80,8 +132,9 @@ class FeatureAnalyzer {
         ...leakVisitor.patterns,
       ];
 
+      final lineInfo = unit.lineInfo;
+
       return allPatterns.map((p) {
-        final lineInfo = result.unit.lineInfo;
         final location = lineInfo.getLocation(p.line);
         return RenPattern(
           name: p.name,
@@ -99,7 +152,6 @@ class FeatureAnalyzer {
     }
   }
 
-  /// Normalizes total weight to a 0–100 score.
   int _calculateScore(List<RenPattern> patterns, int fileCount) {
     if (patterns.isEmpty) return 0;
 
