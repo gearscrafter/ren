@@ -9,11 +9,13 @@ class ConfigLoader {
   static const _fileName = 'ren.yaml';
 
   final String projectPath;
+  final String _normalizedPath;
 
-  ConfigLoader({required this.projectPath});
+  ConfigLoader({required this.projectPath})
+      : _normalizedPath = p.normalize(p.absolute(projectPath));
 
   RenConfig load() {
-    final file = File(p.join(projectPath, _fileName));
+    final file = File(p.join(_normalizedPath, _fileName));
 
     if (!file.existsSync()) {
       return RenConfig.empty;

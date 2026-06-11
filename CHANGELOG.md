@@ -1,3 +1,8 @@
+## 0.3.1
+
+### Fixed
+- `ConfigLoader` now normalizes `projectPath` via `p.normalize(p.absolute(...))`.
+
 ## 0.3.0
 
 ### Added
