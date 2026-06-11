@@ -15,11 +15,19 @@ class LeakVisitor extends RecursiveAstVisitor<void> {
   void visitClassDeclaration(ClassDeclaration node) {
     final analyzer = _ClassLeakAnalyzer(
       filePath: filePath,
-      className: node.name.lexeme,
+      className: _getClassName(node),
     );
     analyzer.analyze(node);
     _patterns.addAll(analyzer.patterns);
     super.visitClassDeclaration(node);
+  }
+
+  static String _getClassName(ClassDeclaration node) {
+    try {
+      return (node as dynamic).name.lexeme as String;
+    } catch (_) {
+      return (node as dynamic).name2.lexeme as String;
+    }
   }
 }
 
@@ -29,7 +37,6 @@ class _ClassLeakAnalyzer {
   final List<RenPattern> patterns = [];
 
   final Map<String, _Resource> _created = {};
-
   final Set<String> _disposed = {};
 
   _ClassLeakAnalyzer({
@@ -41,19 +48,16 @@ class _ClassLeakAnalyzer {
     if (!_isStatefulClass(node)) return;
 
     _scanFields(node);
-
     _scanMethods(node);
-
     _scanDispose(node);
-
     _reportLeaks();
   }
 
   void _scanFields(ClassDeclaration node) {
-    for (final member in node.members) {
+    for (final member in _getMembers(node)) {
       if (member is FieldDeclaration) {
         for (final variable in member.fields.variables) {
-          final name = variable.name.lexeme;
+          final name = _getVariableName(variable);
           final initializer = variable.initializer;
           if (initializer != null) {
             final resourceType = _detectResourceType(initializer.toString());
@@ -71,9 +75,9 @@ class _ClassLeakAnalyzer {
   }
 
   void _scanMethods(ClassDeclaration node) {
-    for (final member in node.members) {
+    for (final member in _getMembers(node)) {
       if (member is MethodDeclaration) {
-        final methodName = member.name.lexeme;
+        final methodName = _getMethodName(member);
         if (methodName == 'initState' || methodName == 'init') {
           _scanMethodBody(member);
         }
@@ -116,8 +120,8 @@ class _ClassLeakAnalyzer {
   }
 
   void _scanDispose(ClassDeclaration node) {
-    for (final member in node.members) {
-      if (member is MethodDeclaration && member.name.lexeme == 'dispose') {
+    for (final member in _getMembers(node)) {
+      if (member is MethodDeclaration && _getMethodName(member) == 'dispose') {
         final body = member.body;
         if (body is BlockFunctionBody) {
           final source = body.toSource();
@@ -144,6 +148,8 @@ class _ClassLeakAnalyzer {
 
       if (!_disposed.contains(name)) {
         final closeMethod = _closeMethodFor(resource.type);
+        final isProviderManaged = resource.type == 'ChangeNotifier' ||
+            resource.type == 'ValueNotifier';
         patterns.add(RenPattern(
           name: '${resource.type} leak',
           reason:
@@ -152,10 +158,36 @@ class _ClassLeakAnalyzer {
           file: filePath,
           line: resource.offset,
           level: PatternLevel.risk,
-          fix:
-              'Add $name.$closeMethod() inside dispose() to prevent memory leaks.',
+          fix: isProviderManaged
+              ? 'Add $name.$closeMethod() inside dispose() — unless managed by Provider/Riverpod which disposes automatically.'
+              : 'Add $name.$closeMethod() inside dispose() to prevent memory leaks.',
         ));
       }
+    }
+  }
+
+
+  List<ClassMember> _getMembers(ClassDeclaration node) {
+    try {
+      return (node as dynamic).members as List<ClassMember>;
+    } catch (_) {
+      return (node as dynamic).declaredMembers as List<ClassMember>;
+    }
+  }
+
+  String _getMethodName(MethodDeclaration node) {
+    try {
+      return (node as dynamic).name.lexeme as String;
+    } catch (_) {
+      return (node as dynamic).name2.lexeme as String;
+    }
+  }
+
+  String _getVariableName(VariableDeclaration node) {
+    try {
+      return (node as dynamic).name.lexeme as String;
+    } catch (_) {
+      return (node as dynamic).name2.lexeme as String;
     }
   }
 

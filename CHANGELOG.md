@@ -1,3 +1,13 @@
+## 0.2.1
+
+### Fixed
+- `LeakVisitor` compatibility with `analyzer >=7.1.0` — added fallback helpers
+  for `ClassDeclaration.name`, `ClassDeclaration.members`,
+  `MethodDeclaration.name`, and `VariableDeclaration.name` to support
+  lower bound versions without breaking newer ones.
+- `ChangeNotifier` and `ValueNotifier` leak fix message now clarifies that
+  Provider/Riverpod disposes them automatically.
+
 ## 0.2.0
 
 ### Added
