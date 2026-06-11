@@ -1,3 +1,10 @@
+## 0.2.3
+
+### Fixed
+- Feature scanner now includes `.dart` files at the root of the specified
+  feature folder as a named feature — previously only sub-directories were
+  scanned, causing files at the root level to be silently skipped.
+  
 ## 0.2.2
 
 ### Fixed

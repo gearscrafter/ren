@@ -96,16 +96,33 @@ class FeatureScanner {
         .toList()
       ..sort((a, b) => p.basename(a.path).compareTo(p.basename(b.path)));
 
+    final rootDartFiles = root
+        .listSync(followLinks: false)
+        .whereType<File>()
+        .where((f) => f.path.endsWith('.dart'))
+        .map((f) => f.path)
+        .toList();
+
+    if (rootDartFiles.isNotEmpty) {
+      features.add(RenFeature(
+        name: p.basename(root.path),
+        path: root.path,
+        files: rootDartFiles,
+      ));
+    }
+
     for (final dir in entries) {
       final name = p.basename(dir.path);
       if (name.startsWith('.')) continue;
 
       final files = await _dartFilesIn(dir);
-      features.add(RenFeature(
-        name: name,
-        path: dir.path,
-        files: files,
-      ));
+      if (files.isNotEmpty) {
+        features.add(RenFeature(
+          name: name,
+          path: dir.path,
+          files: files,
+        ));
+      }
     }
 
     return features;

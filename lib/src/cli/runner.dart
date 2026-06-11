@@ -5,7 +5,7 @@ import 'package:ren/src/reporter/console_reporter.dart';
 import 'package:path/path.dart' as p;
 
 class RenRunner {
-  static const String _version = '0.2.2';
+  static const String _version = '0.2.3';
 
   final ArgParser _parser;
 

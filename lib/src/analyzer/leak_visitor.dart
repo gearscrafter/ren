@@ -166,7 +166,6 @@ class _ClassLeakAnalyzer {
     }
   }
 
-
   List<ClassMember> _getMembers(ClassDeclaration node) {
     try {
       return (node as dynamic).members as List<ClassMember>;
@@ -203,7 +202,8 @@ class _ClassLeakAnalyzer {
     if (expression.contains('StreamController')) {
       return 'StreamController';
     }
-    if (expression.contains('Timer.periodic') || expression.contains('Timer(')) {
+    if (expression.contains('Timer.periodic') ||
+        expression.contains('Timer(')) {
       return 'Timer';
     }
     if (expression.contains('.listen(')) {
