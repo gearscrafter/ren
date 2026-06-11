@@ -200,20 +200,39 @@ class _ClassLeakAnalyzer {
   }
 
   String? _detectResourceType(String expression) {
-    if (expression.contains('StreamController')) return 'StreamController';
-    if (expression.contains('Timer.periodic') || expression.contains('Timer('))
+    if (expression.contains('StreamController')) {
+      return 'StreamController';
+    }
+    if (expression.contains('Timer.periodic') || expression.contains('Timer(')) {
       return 'Timer';
-    if (expression.contains('.listen(')) return 'StreamSubscription';
-    if (expression.contains('AnimationController'))
+    }
+    if (expression.contains('.listen(')) {
+      return 'StreamSubscription';
+    }
+    if (expression.contains('AnimationController')) {
       return 'AnimationController';
-    if (expression.contains('TextEditingController'))
+    }
+    if (expression.contains('TextEditingController')) {
       return 'TextEditingController';
-    if (expression.contains('ScrollController')) return 'ScrollController';
-    if (expression.contains('FocusNode')) return 'FocusNode';
-    if (expression.contains('PageController')) return 'PageController';
-    if (expression.contains('TabController')) return 'TabController';
-    if (expression.contains('ValueNotifier')) return 'ValueNotifier';
-    if (expression.contains('ChangeNotifier')) return 'ChangeNotifier';
+    }
+    if (expression.contains('ScrollController')) {
+      return 'ScrollController';
+    }
+    if (expression.contains('FocusNode')) {
+      return 'FocusNode';
+    }
+    if (expression.contains('PageController')) {
+      return 'PageController';
+    }
+    if (expression.contains('TabController')) {
+      return 'TabController';
+    }
+    if (expression.contains('ValueNotifier')) {
+      return 'ValueNotifier';
+    }
+    if (expression.contains('ChangeNotifier')) {
+      return 'ChangeNotifier';
+    }
     return null;
   }
 

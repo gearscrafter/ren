@@ -1,3 +1,10 @@
+## 0.2.2
+
+### Fixed
+- `LeakVisitor` — added curly braces to all single-line `if` statements in
+  `_detectResourceType` to satisfy `curly_braces_in_flow_control_structures`
+  lint rule.
+
 ## 0.2.1
 
 ### Fixed
