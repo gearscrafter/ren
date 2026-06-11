@@ -30,12 +30,15 @@ class RenPattern {
   /// `null` when [level] is [PatternLevel.presence].
   final String? context;
 
+  final String fix;
+
   const RenPattern({
     required this.name,
     required this.reason,
     required this.weight,
     required this.file,
     required this.line,
+    required this.fix,
     this.level = PatternLevel.presence,
     this.context,
   });

@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:path/path.dart' as p;
+import 'package:ren/src/scanner/auto_discovery.dart';
 import 'feature.dart';
 
 /// Scans a Flutter project and discovers features by folder structure.
@@ -45,18 +46,35 @@ class FeatureScanner {
       );
     }
 
+    final candidates = <ScanResult>[];
+
     for (final rootName in _featureRoots) {
       final candidate = Directory(p.join(libDir.path, rootName));
       if (candidate.existsSync()) {
         final features = await _scanFeatureRoot(candidate);
         if (features.isNotEmpty) {
-          return ScanResult(
+          candidates.add(ScanResult(
             features: features,
             strategy: DetectionStrategy.featureFolder,
             featureRoot: candidate.path,
-          );
+          ));
         }
       }
+    }
+
+    final autoDiscovery = AutoDiscovery(projectPath: projectPath);
+    final discovered = await autoDiscovery.discover();
+    if (discovered != null && discovered.features.isNotEmpty) {
+      candidates.add(ScanResult(
+        features: discovered.features,
+        strategy: DetectionStrategy.autoDiscovery,
+        featureRoot: discovered.featureRoot,
+      ));
+    }
+
+    if (candidates.isNotEmpty) {
+      candidates.sort((a, b) => b.features.length.compareTo(a.features.length));
+      return candidates.first;
     }
 
     final allFiles = await _dartFilesIn(libDir);
@@ -135,6 +153,7 @@ class ScanResult {
 
 enum DetectionStrategy {
   featureFolder,
+  autoDiscovery,
   fallback,
   none,
 }

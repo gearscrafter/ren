@@ -1,4 +1,4 @@
-# REN
+# ren
 
 > Flutter Feature Gravity Analyzer
 
@@ -8,8 +8,8 @@
 [![platform](https://img.shields.io/badge/platform-dart-blue.svg)](https://dart.dev)
 
 **ren** detects performance risk in your Flutter features before you ship —
-analyzing costly AST patterns, widget combinations, and lifecycle misuse
-to report a gravity score per feature, without running the app.
+analyzing costly AST patterns, widget combinations, lifecycle misuse, and
+resource leaks to report a gravity score per feature, without running the app.
 
 > **ren** is not a replacement for `flutter analyze` or DevTools.
 > It occupies a different space:
@@ -30,7 +30,7 @@ dart pub global activate ren
 ```
 
 > **Windows (PowerShell):** `ren` conflicts with the built-in `Rename-Item` alias.
-> Use `renw` instead, or run `Remove-Item Alias:ren -Force` once per session.
+> Run `Remove-Item Alias:ren -Force` once per session to use ren directly.
 
 ---
 
@@ -39,6 +39,9 @@ dart pub global activate ren
 ```bash
 # Analyze the current project
 ren
+
+# Generate ren.yaml from your project structure
+ren --init
 
 # Analyze a specific path
 ren --project ./my_app
@@ -63,35 +66,54 @@ ren --fail-on high
 ```
   ◈ ren  · Flutter Feature Gravity Analyzer
   ────────────────────────────────────────────────────────────
+
   ◦ checkout             ●●●●●  CRITICAL  100%
-    ↳ BackdropFilter     [inside ListView]  BackdropFilter inside ListView is one of the worst Flutter performance patterns.
-    ↳ Opacity            [inside ListView]  Opacity inside ListView creates an offscreen layer per visible item.
-    ↳ ShaderMask         Runs a shader on every frame — high GPU cost.
+  ╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌
+
+    🔴  BackdropFilter [inside ListView]  line 17
+        BackdropFilter inside ListView is one of the worst Flutter performance patterns.
+        → Move BackdropFilter outside the ListView. Apply blur to a static background instead.
+
+    🔴  Opacity [inside ListView]  line 36
+        Opacity inside ListView creates an offscreen layer per visible item.
+        → Remove Opacity from list items. Use a colored Container or Image with opacity baked in.
 
     Top contributors:
     BackdropFilter ················ +100
-    Opacity ······················· +50
-    ShaderMask ···················· +35
+    Opacity ······················· +70
 
-  ◦ home                 ●●●○○  HIGH       65%
-    ↳ setState in build  Calling setState inside build triggers infinite rebuild loop.
-    ↳ MediaQuery.of      Rebuilds on any MediaQuery change — prefer MediaQuery.sizeOf.
+  ◦ profile              ●●●○○  HIGH       56%
+  ╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌
+
+    🔴  StreamController leak  line 18
+        _controller (StreamController) is created but close() is never called in dispose().
+        → Add _controller.close() inside dispose() to prevent memory leaks.
+
+    🔴  AnimationController leak  line 22
+        _animation (AnimationController) is created but dispose() is never called in dispose().
+        → Add _animation.dispose() inside dispose() to prevent memory leaks.
 
     Top contributors:
-    setState in build ············· +50
-    MediaQuery.of ················· +15
+    StreamController leak ········· +40
+    AnimationController leak ······ +30
 
-  ◦ profile              ○○○○○  LOW        12%
-    ↳ NetworkImage       No caching by default — prefer CachedNetworkImageProvider.
   ────────────────────────────────────────────────────────────
-  3 feature(s) · 6 pattern(s) detected
+
+  How scores work:
+
+  ⚪  Presence   — pattern detected individually
+  🟡  Context    — inside a costly parent widget  (×1.5)
+  🔴  Risk       — inside a critical parent widget (×2.5)
+
+  ────────────────────────────────────────────────────────────
+  2 feature(s) · 4 pattern(s) detected
 ```
 
 ---
 
 ## ren.yaml
 
-Place a `ren.yaml` at your project root to avoid passing flags every time:
+Place a `ren.yaml` at your project root — or run `ren --init` to generate one:
 
 ```yaml
 # Custom feature root
@@ -117,6 +139,7 @@ custom_rules:
   - name: MyHeavyWidget
     reason: Internal widget known to cause jank in production.
     weight: 45
+    fix: Replace with LightweightWidget from our design system.
 ```
 
 CLI flags always take priority over `ren.yaml`.
@@ -134,15 +157,17 @@ another costly widget**, the weight is multiplied:
 
 | Level | Example | Multiplier |
 |---|---|---|
-| Presence | `Opacity` found | ×1.0 |
-| Context | `NetworkImage` inside `ListView` | ×1.5 |
-| Risk | `BackdropFilter` inside `ListView` | ×2.5 |
+| ⚪ Presence | `Opacity` found | ×1.0 |
+| 🟡 Context | `NetworkImage` inside `ListView` | ×1.5 |
+| 🔴 Risk | `BackdropFilter` inside `ListView` | ×2.5 |
 
-The total weight per feature is normalized to a 0–100 gravity score.
+ren also runs a **leak detector** at the class level — verifying that
+controllers, streams, timers, and notifiers declared in `initState` are
+properly closed in `dispose()`.
 
-If no feature root is found (`lib/features/`, `lib/modules/`), ren falls back
-to treating `lib/` as a single feature — so it always produces output regardless
-of your project structure.
+If no feature root is found (`lib/features/`, `lib/modules/`), ren
+auto-discovers candidate folders or falls back to `lib/` as a single
+feature — so it always produces output regardless of your project structure.
 
 ---
 
@@ -179,6 +204,14 @@ of your project structure.
 | Lifecycle | `setState in build` | 50 |
 | Lifecycle | `setState in initState` | 35 |
 
+### Resource leak detection
+
+ren verifies that the following resources are closed in `dispose()`:
+
+`StreamController` · `StreamSubscription` · `Timer` · `AnimationController` ·
+`TextEditingController` · `ScrollController` · `FocusNode` · `PageController` ·
+`TabController` · `ValueNotifier` · `ChangeNotifier`
+
 ### Compound patterns (elevated weight)
 
 | Level | Combination | Weight |
@@ -201,10 +234,10 @@ of your project structure.
 
 | Score | Level |
 |---|---|
-| 0–20 | 🟢 LOW |
-| 21–45 | 🟡 MEDIUM |
-| 46–70 | 🟠 HIGH |
-| 71–100 | 🔴 CRITICAL |
+| 0–20 | 🟢 LOW — safe to ship |
+| 21–45 | 🟡 MEDIUM — review before release |
+| 46–70 | 🟠 HIGH — refactor soon |
+| 71–100 | 🔴 CRITICAL — immediate action needed |
 
 ---
 

@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:args/args.dart';
@@ -110,6 +111,8 @@ class AnalyzeCommand {
     } else {
       results.sort((a, b) => b.gravityScore.compareTo(a.gravityScore));
 
+      ConsolerReporter.printLegend();
+
       for (final result in results) {
         ConsolerReporter.printFeatureResult(result);
       }
@@ -177,6 +180,13 @@ class AnalyzeCommand {
         buffer.writeln('          "name": "${pp.name}",');
         buffer.writeln('          "weight": ${pp.weight},');
         buffer.writeln('          "line": ${pp.line},');
+        buffer.writeln('          "level": "${pp.level.name}",');
+        if (pp.context != null) {
+          buffer.writeln('          "context": "${pp.context}",');
+        }
+        buffer.writeln(
+            '          "reason": "${pp.reason.replaceAll('—', '-')}",');
+        buffer.writeln('          "fix": "${pp.fix.replaceAll('—', '-')}",');
         buffer.writeln('          "file": "${pp.file.replaceAll('\\', '/')}"');
         buffer.writeln('        }$patternComma');
       }
@@ -187,6 +197,8 @@ class AnalyzeCommand {
 
     buffer.writeln('  ]');
     buffer.writeln('}');
-    print(buffer.toString());
+    final jsonString = buffer.toString();
+    stdout.write(
+        utf8.encode(jsonString).map((b) => String.fromCharCode(b)).join());
   }
 }

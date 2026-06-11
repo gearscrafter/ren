@@ -1,11 +1,11 @@
 import 'dart:io';
 import 'package:analyzer/dart/analysis/utilities.dart';
+import 'package:ren/src/analyzer/leak_visitor.dart';
 import 'package:ren/src/analyzer/rules/widget_rules.dart';
 import 'package:ren/src/config/ren_config.dart';
 import '../scanner/feature.dart';
 import '../analyzer/ast_visitor.dart';
 import '../analyzer/pattern.dart';
-
 
 /// Result of analyzing a single [RenFeature].
 class FeatureResult {
@@ -60,10 +60,27 @@ class FeatureAnalyzer {
     try {
       final content = File(filePath).readAsStringSync();
       final result = parseString(content: content, throwIfDiagnostics: false);
-      final visitor = GravityVisitor(filePath: filePath, rules: rules);
-      result.unit.visitChildren(visitor);
 
-      return visitor.patterns.map((p) {
+      final gravityVisitor = GravityVisitor(filePath: filePath, rules: rules);
+      result.unit.visitChildren(gravityVisitor);
+
+      final leakVisitor = LeakVisitor(filePath: filePath);
+      result.unit.visitChildren(leakVisitor);
+
+      final leakResourceNames = leakVisitor.patterns
+          .map((p) => p.name.replaceAll(' leak', '').trim())
+          .toSet();
+
+      final filteredGravityPatterns = gravityVisitor.patterns
+          .where((p) => !leakResourceNames.contains(p.name))
+          .toList();
+
+      final allPatterns = [
+        ...filteredGravityPatterns,
+        ...leakVisitor.patterns,
+      ];
+
+      return allPatterns.map((p) {
         final lineInfo = result.unit.lineInfo;
         final location = lineInfo.getLocation(p.line);
         return RenPattern(
@@ -74,6 +91,7 @@ class FeatureAnalyzer {
           line: location.lineNumber,
           level: p.level,
           context: p.context,
+          fix: p.fix,
         );
       }).toList();
     } catch (_) {

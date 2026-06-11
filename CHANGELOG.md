@@ -1,3 +1,18 @@
+## 0.2.0
+
+### Added
+- `ren --init` — scans project structure and generates `ren.yaml` automatically.
+- Auto-discovery — detects feature root without `--features` flag, supports non-conventional structures (`lib/ui/screens`, `lib/presentation/pages`, etc.).
+- `ren.yaml` support — project-level configuration:
+  - `features`, `fail_on`, `ignore`, `weights`, `custom_rules`.
+  - CLI flags always take priority over `ren.yaml`.
+- Actionable fix per pattern — every detected pattern includes a `->` suggestion.
+- Resource leak detection (`LeakVisitor`) — verifies that `StreamController`, `StreamSubscription`, `Timer`, `AnimationController`, `TextEditingController`, `ScrollController`, `FocusNode`, `PageController`, `TabController`, `ValueNotifier`, `ChangeNotifier` are closed in `dispose()`.
+- Score normalization by pattern level — presence, context, and risk patterns use separate weight ceilings.
+- Output improvements — separators between features, pattern level icons (⚪ 🟡 🔴), gravity legend at the top of the report.
+- JSON output now includes `level`, `context`, `reason`, and `fix` per pattern.
+- Windows hint — suggests `Remove-Item Alias:ren -Force` on PowerShell.
+
 ## 0.1.0
 
 ### Added

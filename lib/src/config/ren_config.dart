@@ -35,10 +35,12 @@ class CustomRule {
   final String name;
   final String reason;
   final int weight;
+  final String? fix;
 
   const CustomRule({
     required this.name,
     required this.reason,
     required this.weight,
+    this.fix,
   });
 }

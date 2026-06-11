@@ -100,12 +100,25 @@ class ConsolerReporter {
       '${_c(_bold, score)}',
     );
 
-    if (result.patterns.isEmpty) return;
+    if (result.patterns.isEmpty) {
+      print('');
+      return;
+    }
+
+    print(_c(_gray, '  ${'╌' * 52}'));
+    print('');
+
     for (final pattern in result.patterns) {
-      final levelIcon = switch (pattern.level) {
-        PatternLevel.presence => _c(_gray, '↳'),
-        PatternLevel.context => _c(_yellow, '↳'),
-        PatternLevel.risk => _c(_red, '↳'),
+      final patternColor = switch (pattern.level) {
+        PatternLevel.presence => _gray,
+        PatternLevel.context => _yellow,
+        PatternLevel.risk => _red,
+      };
+
+      final icon = switch (pattern.level) {
+        PatternLevel.presence => '⚪',
+        PatternLevel.context => '🟡',
+        PatternLevel.risk => '🔴',
       };
 
       final contextTag = pattern.context != null
@@ -113,13 +126,16 @@ class ConsolerReporter {
           : '';
 
       print(
-        '    $levelIcon ${_c(_dim, pattern.name.padRight(22))}'
-        '$contextTag '
-        '${_c(_gray, pattern.reason)}',
+        '    $icon  ${_c(patternColor, pattern.name)}$contextTag'
+        '${_c(_gray, '  line ${pattern.line}')}',
       );
+
+      print('       ${_c(_dim, pattern.reason)}');
+
+      print('       ${_c(_cyan, '->')} ${pattern.fix}');
+      print('');
     }
 
-    print('');
     print('    ${_c(_dim, 'Top contributors:')}');
 
     final contributions = <String, int>{};
@@ -141,11 +157,35 @@ class ConsolerReporter {
     }
 
     print('');
+    print('');
   }
 
   static String _gravityBar(int score) {
     final filled = (score / 20).round().clamp(0, 5);
     final empty = 5 - filled;
     return '●' * filled + '○' * empty;
+  }
+
+  static void printLegend() {
+    print(_c(_gray, '  ${'─' * 52}'));
+    print('');
+    print('  ${_c(_dim, 'How scores work:')}');
+    print('');
+    print('  ${_c(_gray, '⚪')}  Presence   — pattern detected individually');
+    print(
+        '  ${_c(_yellow, '🟡')}  Context    — inside a costly parent widget  (×1.5)');
+    print(
+        '  ${_c(_red, '🔴')}  Risk       — inside a critical parent widget (×2.5)');
+    print('');
+    print('  ${_c(_dim, 'Gravity levels:')}');
+    print('');
+    print('  ${_c(_green, '●○○○○')}  LOW       0–20%   — safe to ship');
+    print(
+        '  ${_c(_yellow, '●●○○○')}  MEDIUM   21–45%   — review before release');
+    print(
+        '  ${_c('\x1B[38;5;208m', '●●●○○')}  HIGH     46–70%   — refactor soon');
+    print(
+        '  ${_c(_red, '●●●●●')}  CRITICAL 71–100%  — immediate action needed');
+    print('');
   }
 }

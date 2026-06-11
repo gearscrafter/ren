@@ -101,7 +101,7 @@ class GravityVisitor extends RecursiveAstVisitor<void> {
     if (compound != _noMatch) {
       final customRule = rules.firstWhere(
         (r) => r.name == widgetName,
-        orElse: () => WidgetRule(name: '', reason: '', weight: -1),
+        orElse: () => WidgetRule(name: '', reason: '', weight: -1, fix: ''),
       );
 
       final effectiveWeight = customRule.weight >= 0
@@ -116,6 +116,7 @@ class GravityVisitor extends RecursiveAstVisitor<void> {
         line: offset,
         level: compound.level,
         context: compound.parent,
+        fix: compound.fix,
       ));
       return;
     }
@@ -126,7 +127,7 @@ class GravityVisitor extends RecursiveAstVisitor<void> {
   int _scaleCompoundWeight(CompoundRule compound, int customBaseWeight) {
     final originalBase = builtInRules.firstWhere(
       (r) => r.name == compound.widget,
-      orElse: () => WidgetRule(name: '', reason: '', weight: 1),
+      orElse: () => WidgetRule(name: '', reason: '', weight: 1, fix: ''),
     );
 
     if (originalBase.weight <= 0) return compound.weight;
@@ -148,6 +149,7 @@ class GravityVisitor extends RecursiveAstVisitor<void> {
         weight: rule.weight,
         file: filePath,
         line: node.offset,
+        fix: rule.fix,
       ));
     }
   }
@@ -159,23 +161,31 @@ class GravityVisitor extends RecursiveAstVisitor<void> {
           reason:
               'Calling setState inside build triggers infinite rebuild loop.',
           weight: 50,
+          fix:
+              'Move the setState call to a user interaction callback or lifecycle method like initState.',
         ),
       'initState' => const _SetStateRule(
           name: 'setState in initState',
           reason:
-              'setState in initState is redundant — widget has not mounted yet, use direct assignment instead.',
+              'setState in initState is redundant — widget has not mounted yet.',
           weight: 35,
+          fix:
+              'Assign state variables directly without setState — the widget rebuilds on first mount anyway.',
         ),
       'dispose' => const _SetStateRule(
           name: 'setState in dispose',
           reason:
               'Calling setState after dispose causes a crash — the widget is no longer mounted.',
           weight: 60,
+          fix:
+              'Remove setState from dispose. Clean up resources only — never trigger rebuilds here.',
         ),
       _ => const _SetStateRule(
           name: 'setState misuse',
           reason: 'setState called in an unexpected lifecycle method.',
           weight: 25,
+          fix:
+              'Review where setState is being called and move it to an appropriate callback.',
         ),
     };
   }
@@ -192,6 +202,7 @@ class GravityVisitor extends RecursiveAstVisitor<void> {
           file: filePath,
           line: offset,
           level: PatternLevel.presence,
+          fix: rule.fix,
         ));
       }
     }
@@ -217,15 +228,18 @@ final _noMatch = CompoundRule(
   reason: '',
   weight: 0,
   level: PatternLevel.presence,
+  fix: '',
 );
 
 class _SetStateRule {
   final String name;
   final String reason;
   final int weight;
+  final String fix;
   const _SetStateRule({
     required this.name,
     required this.reason,
     required this.weight,
+    required this.fix,
   });
 }

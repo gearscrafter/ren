@@ -1,9 +1,11 @@
 import 'package:args/args.dart';
 import 'package:ren/src/cli/commands/analyze_command.dart';
+import 'package:ren/src/cli/commands/init_command.dart';
 import 'package:ren/src/reporter/console_reporter.dart';
+import 'package:path/path.dart' as p;
 
 class RenRunner {
-  static const String _version = '0.1.0';
+  static const String _version = '0.2.0';
 
   final ArgParser _parser;
 
@@ -24,6 +26,12 @@ class RenRunner {
       abbr: 'v',
       negatable: false,
       help: 'Show the current version of ren.',
+    );
+
+    parser.addFlag(
+      'init',
+      negatable: false,
+      help: 'Scan project and generate ren.yaml.',
     );
 
     parser.addOption(
@@ -54,24 +62,18 @@ class RenRunner {
     );
 
     parser.addOption(
-      'fail-on',
+      'exclude',
       defaultsTo: null,
-      allowed: ['low', 'medium', 'high', 'critical'],
-      allowedHelp: {
-        'low': 'Fail if any feature is LOW or above.',
-        'medium': 'Fail if any feature is MEDIUM or above.',
-        'high': 'Fail if any feature is HIGH or above.',
-        'critical': 'Fail only if any feature is CRITICAL.',
-      },
-      help: 'Exit with code 1 if any feature reaches this gravity level.',
-      valueHelp: 'level',
+      help: 'Comma-separated list of paths to exclude.',
+      valueHelp: 'path1,path2',
     );
 
     parser.addOption(
-      'exclude',
+      'fail-on',
       defaultsTo: null,
-      help: 'Comma-separated list of paths to exclude from analysis.',
-      valueHelp: 'path1,path2',
+      allowed: ['low', 'medium', 'high', 'critical'],
+      help: 'Exit with code 1 if any feature reaches this level.',
+      valueHelp: 'level',
     );
 
     return parser;
@@ -91,6 +93,13 @@ class RenRunner {
         return;
       }
 
+      final projectPath = p.absolute(results['project'] as String);
+
+      if (results['init'] as bool) {
+        await InitCommand(projectPath: projectPath).execute();
+        return;
+      }
+
       await AnalyzeCommand(results).execute();
     } on FormatException catch (e) {
       ConsolerReporter.printError(e.message);
@@ -107,10 +116,9 @@ class RenRunner {
     print(_parser.usage);
     print('');
     print('  Examples:');
-    print('    ren');
-    print('    ren --project ./my_app');
-    print('    ren --project ./my_app --features lib/ui/screens');
-    print('    ren --format json > report.json');
-    print('    ren --fail-on high');
+    print('    ren                    # auto-discover features');
+    print('    ren --init             # generate ren.yaml');
+    print('    ren --fail-on high     # CI/CD mode');
+    print('    ren --format json      # JSON output');
   }
 }
