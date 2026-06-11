@@ -1,11 +1,14 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:isolate';
 
 import 'package:args/args.dart';
 import 'package:path/path.dart' as p;
 import 'package:ren/src/analyzer/feature_analyzer.dart';
 import 'package:ren/src/config/config_loader.dart';
+import 'package:ren/src/config/ren_config.dart';
 import 'package:ren/src/reporter/console_reporter.dart';
+import 'package:ren/src/scanner/feature.dart';
 import 'package:ren/src/utils/spinner.dart';
 import '../../scanner/feature_scanner.dart';
 
@@ -25,7 +28,6 @@ class AnalyzeCommand {
     final projectPath = p.normalize(p.absolute(rawPath));
 
     final config = ConfigLoader(projectPath: projectPath).load();
-
     final effectiveFeatures = customFeatures ?? config.features;
     final effectiveFailOn = failOn ?? config.failOn;
     final effectiveExclude =
@@ -82,22 +84,44 @@ class AnalyzeCommand {
       exit(1);
     }
 
-    final analyzer = FeatureAnalyzer(
-      config: config,
-      projectPath: projectPath,
-    );
-    final featureResults = <FeatureResult>[];
+    // ── Análisis en background con spinner en foreground ──────────────────
     final spinner = Spinner();
+    final featureResults = <FeatureResult>[];
 
     if (!isJson) {
-      spinner.update('Scanning project...');
+      spinner.start('Building analysis context...');
     }
 
-    for (final feature in result.features) {
-      if (!isJson) {
-        spinner.update(feature.name);
+    final receivePort = ReceivePort();
+
+    final isolate = await Isolate.spawn(
+      _analyzeIsolate,
+      _IsolateParams(
+        sendPort: receivePort.sendPort,
+        projectPath: projectPath,
+        features: result.features,
+        config: config,
+      ),
+    );
+
+    await for (final message in receivePort) {
+      if (message is _ProgressMessage) {
+        if (!isJson) {
+          spinner.update(
+            '[${message.current}/${message.total}]  ${message.featureName}',
+          );
+        }
+      } else if (message is _ResultMessage) {
+        featureResults.addAll(message.results);
+        receivePort.close();
+        isolate.kill();
+        break;
+      } else if (message is _ErrorMessage) {
+        receivePort.close();
+        isolate.kill();
+        if (!isJson) spinner.fail('Analysis failed: ${message.error}');
+        exit(1);
       }
-      featureResults.add(await analyzer.analyze(feature));
     }
 
     if (!isJson) {
@@ -107,8 +131,40 @@ class AnalyzeCommand {
     _printResults(featureResults, format, failOn: effectiveFailOn);
   }
 
-  void _printResults(List<FeatureResult> results, String format,
-      {String? failOn}) {
+  static Future<void> _analyzeIsolate(_IsolateParams params) async {
+    try {
+      final analyzer = FeatureAnalyzer(
+        config: params.config,
+        projectPath: params.projectPath,
+      );
+
+      final results = <FeatureResult>[];
+      final features = params.features;
+
+      for (var i = 0; i < features.length; i++) {
+        final feature = features[i];
+
+        params.sendPort.send(_ProgressMessage(
+          featureName: feature.name,
+          current: i + 1,
+          total: features.length,
+        ));
+
+        results.add(await analyzer.analyze(feature));
+      }
+
+      // Envía resultados completos
+      params.sendPort.send(_ResultMessage(results: results));
+    } catch (e) {
+      params.sendPort.send(_ErrorMessage(error: e.toString()));
+    }
+  }
+
+  void _printResults(
+    List<FeatureResult> results,
+    String format, {
+    String? failOn,
+  }) {
     if (format == 'json') {
       _printJson(results);
     } else {
@@ -204,4 +260,40 @@ class AnalyzeCommand {
     stdout.write(
         utf8.encode(jsonString).map((b) => String.fromCharCode(b)).join());
   }
+}
+
+class _IsolateParams {
+  final SendPort sendPort;
+  final String projectPath;
+  final List<RenFeature> features;
+  final RenConfig config;
+
+  const _IsolateParams({
+    required this.sendPort,
+    required this.projectPath,
+    required this.features,
+    required this.config,
+  });
+}
+
+class _ProgressMessage {
+  final String featureName;
+  final int current;
+  final int total;
+
+  const _ProgressMessage({
+    required this.featureName,
+    required this.current,
+    required this.total,
+  });
+}
+
+class _ResultMessage {
+  final List<FeatureResult> results;
+  const _ResultMessage({required this.results});
+}
+
+class _ErrorMessage {
+  final String error;
+  const _ErrorMessage({required this.error});
 }

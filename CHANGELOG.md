@@ -1,3 +1,12 @@
+## 0.3.2
+
+### Fixed
+- `LeakVisitor._getMembers` — added third fallback via `declaredFragment`
+  for `analyzer` versions where neither `members` nor `declaredMembers`
+  are available, preventing `NoSuchMethodError` on `ClassDeclarationImpl`.
+- `LeakVisitor._getClassName` / `_getMethodName` / `_getVariableName` —
+  added `declaredElement?.name` as final fallback for full version coverage.
+
 ## 0.3.1
 
 ### Fixed

@@ -3,7 +3,7 @@ description: >
   A static analysis tool that measures the performance weight of each feature
   in your Flutter app — detecting costly AST patterns and reporting a gravity
   score per feature.
-version: 0.3.1
+version: 0.3.2
 repository: https://github.com/gearscrafter/ren
 
 environment:

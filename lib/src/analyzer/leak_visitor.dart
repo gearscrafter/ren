@@ -25,8 +25,14 @@ class LeakVisitor extends RecursiveAstVisitor<void> {
   static String _getClassName(ClassDeclaration node) {
     try {
       return (node as dynamic).name.lexeme as String;
-    } catch (_) {
+    } catch (_) {}
+    try {
       return (node as dynamic).name2.lexeme as String;
+    } catch (_) {}
+    try {
+      return (node as dynamic).declaredElement?.name as String? ?? '';
+    } catch (_) {
+      return '';
     }
   }
 }
@@ -169,24 +175,44 @@ class _ClassLeakAnalyzer {
   List<ClassMember> _getMembers(ClassDeclaration node) {
     try {
       return (node as dynamic).members as List<ClassMember>;
-    } catch (_) {
+    } catch (_) {}
+    try {
       return (node as dynamic).declaredMembers as List<ClassMember>;
-    }
+    } catch (_) {}
+    try {
+      final fragment = (node as dynamic).declaredFragment;
+      if (fragment != null) {
+        return (fragment as dynamic).members as List<ClassMember>;
+      }
+    } catch (_) {}
+    return [];
   }
 
   String _getMethodName(MethodDeclaration node) {
     try {
       return (node as dynamic).name.lexeme as String;
-    } catch (_) {
+    } catch (_) {}
+    try {
       return (node as dynamic).name2.lexeme as String;
+    } catch (_) {}
+    try {
+      return (node as dynamic).declaredElement?.name as String? ?? '';
+    } catch (_) {
+      return '';
     }
   }
 
   String _getVariableName(VariableDeclaration node) {
     try {
       return (node as dynamic).name.lexeme as String;
-    } catch (_) {
+    } catch (_) {}
+    try {
       return (node as dynamic).name2.lexeme as String;
+    } catch (_) {}
+    try {
+      return (node as dynamic).declaredElement?.name as String? ?? '';
+    } catch (_) {
+      return '';
     }
   }
 
